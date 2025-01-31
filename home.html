@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Statistik Perolehan Suara - Pileg Dapil IX Jateng 2024</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 20px;
+            text-align: center;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+        canvas {
+            max-width: 600px;
+            margin: 20px auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Statistik Perolehan Suara</h1>
+    <h2>Pemilihan Legislatif Dapil IX Jawa Tengah 2024</h2>
+    
+    <label for="wilayah">Pilih Wilayah:</label>
+    <select id="wilayah" onchange="filterData()">
+        <option value="all">Semua Wilayah</option>
+        <option value="wilayah1">Wilayah 1</option>
+        <option value="wilayah2">Wilayah 2</option>
+    </select>
+    
+    <table id="voteTable">
+        <tr>
+            <th>Partai</th>
+            <th>Perolehan Suara</th>
+        </tr>
+    </table>
+    
+    <canvas id="voteChart"></canvas>
+    
+    <script>
+        // Your web app's Firebase configuration
+		// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+		const firebaseConfig = {
+			apiKey: "AIzaSyAaB8N6qhvh6neqpazd0O8cDb8tay8GKio",
+			authDomain: "ruasmhb.firebaseapp.com",
+			databaseURL: "https://ruasmhb-default-rtdb.asia-southeast1.firebasedatabase.app",
+			projectId: "ruasmhb",
+			storageBucket: "ruasmhb.firebasestorage.app",
+			messagingSenderId: "1060916453685",
+			appId: "1:1060916453685:web:f0ef735a39024ec3672c7c",
+			measurementId: "G-2Q9CM7BV0V"
+			};
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        function fetchData() {
+            db.ref('perolehan_suara').on('value', snapshot => {
+                const data = snapshot.val();
+                updateTableAndChart(data);
+            });
+        }
+
+        function updateTableAndChart(data) {
+            let table = document.getElementById('voteTable');
+            table.innerHTML = '<tr><th>Partai</th><th>Perolehan Suara</th></tr>';
+            let labels = [];
+            let values = [];
+            
+            for (let partai in data) {
+                labels.push(partai);
+                values.push(data[partai]);
+                let row = table.insertRow();
+                row.insertCell(0).textContent = partai;
+                row.insertCell(1).textContent = data[partai];
+            }
+            
+            updateChart(labels, values);
+        }
+
+        function updateChart(labels, values) {
+            const ctx = document.getElementById('voteChart').getContext('2d');
+            if (window.voteChart) window.voteChart.destroy();
+            window.voteChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Perolehan Suara',
+                        data: values,
+                        backgroundColor: ['red', 'blue', 'green', 'yellow', 'purple']
+                    }]
+                }
+            });
+        }
+
+        function filterData() {
+            const wilayah = document.getElementById('wilayah').value;
+            db.ref('perolehan_suara').once('value', snapshot => {
+                let data = snapshot.val();
+                if (wilayah !== 'all') {
+                    data = Object.fromEntries(Object.entries(data).filter(([key]) => key.includes(wilayah)));
+                }
+                updateTableAndChart(data);
+            });
+        }
+
+        fetchData();
+    </script>
+</body>
+</html>
